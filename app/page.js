@@ -55,19 +55,27 @@ export default function Home() {
     setInventory(inventoryList);
   };
 
-  // Function to increment the quantity of an item
   const incrementItem = async (item) => {
     const docRef = doc(collection(firestore, "inventory"), item);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      const { quantity } = docSnap.data();
-      await setDoc(docRef, { quantity: quantity + 1 });
-    } else {
-      await setDoc(docRef, { quantity: 1 });
+  
+    try {
+      const docSnap = await getDoc(docRef);
+  
+      // Update quantity only if document exists (prevents unnecessary writes)
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
+        await setDoc(docRef, { quantity: quantity + 1 }); // Increment quantity
+      } else {
+        // If document doesn't exist, create it with a quantity of 1
+        await setDoc(docRef, { quantity: 1 });
+      }
+  
+      await updateInventory(); // Call updateInventory after successful update
+    } catch (error) {
+      console.error("Error incrementing item:", error);
+      // Handle potential errors during Firestore operations (optional)
     }
-    await updateInventory();
   };
-
   // Function to decrement the quantity of an item
   const decrementItem = async (item) => {
     const docRef = doc(collection(firestore, "inventory"), item);
